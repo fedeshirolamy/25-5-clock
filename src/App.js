@@ -1,9 +1,15 @@
 import './App.css';
 import { useState } from "react"
+import { Length } from './length';
 
 
 function App() {
+
   const [displayTime, setDisplayTime] = useState(25 * 60)
+  const [breakTime, setBreakTime] = useState(5 * 60)
+  const [sessionTime, setSessionTime] = useState(25 * 60)
+  const [timerOn, setTimerOn]=useState(false)
+
   const formatTime = (time) => {
     let minutes = Math.floor(time / 60)
     let seconds = time % 60
@@ -13,25 +19,65 @@ function App() {
       (seconds < 10 ? "0" + seconds : seconds)
     )
   }
+
+  const changeTime = (amount, type) => {
+    if (type === 'break') {
+      if (breakTime <= 60 && amount < 0) {
+        return
+      }
+      setBreakTime(prev => prev + amount)
+    } else {
+      if (sessionTime <= 60 && amount < 0) {
+        return
+      }
+      setSessionTime(prev => prev + amount)
+      if (!timerOn) {
+        setDisplayTime(sessionTime + amount)
+      }
+    }
+  }
+
+  const controlTime = () => {
+    
+  }
+  
   return (
     <div className="App">
-      <h1>25 + 5 Clock</h1>
-      
-      <h2 id="break-label">Breack Session Length</h2>
-      <button id="break-decrement">-</button>
-      <span id="break-length">5</span>
-      <button id="break-increment">+</button>
-
-      <h2 id="session-label">Session Length</h2>
-      <button id="session-decrement">-</button>
-      <span id="time-left">25</span>
-      <button id="session-increment">+</button>
-
-      <h2 id="timer-label">Session</h2>
-      <h2 id="session-length">{formatTime(displayTime)}</h2>
-
-      <button id="start_stop">play / pause</button>
-      <button id="reset">Reset</button>
+      <div className='center-align'>
+        <h1>Pomodoro Clock</h1>
+        <div className='dual-container'>
+          <Length
+            title={"break length"}
+            changeTime={changeTime}
+            type={"break"}
+            time={breakTime}
+            formatTime={formatTime}
+          />   
+          <Length
+            title={"session length"}
+            changeTime={changeTime}
+            type={"session"}
+            time={sessionTime}
+            formatTime={formatTime}
+          />
+        </div>
+        <h2>{formatTime(displayTime)}</h2>
+        <button className='btn-large deep-purple lighten-2'
+          onClick={controlTime}
+        >
+          {
+            timerOn ? (
+              <i className='material-icons'>pause_circle_filled</i>
+            ) : (
+                <i className='material-icons'>play_circle_filled</i>
+            )
+              
+          }
+        </button>
+        <button className='btn-large deep-purple lighten-2'>
+          <i className='material-icons'>autorenew</i>
+        </button>
+      </div>
     </div>
   );
 }
