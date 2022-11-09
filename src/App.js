@@ -1,14 +1,21 @@
 import './App.css';
 import { useState } from "react"
-import { Length } from './length';
+import { Length } from './length'; 
 
 
 function App() {
 
-  const [displayTime, setDisplayTime] = useState(25 * 60)
-  const [breakTime, setBreakTime] = useState(5 * 60)
-  const [sessionTime, setSessionTime] = useState(25 * 60)
-  const [timerOn, setTimerOn]=useState(false)
+  const [displayTime, setDisplayTime] = useState(5)
+  const [breakTime, setBreakTime] = useState(3)
+  const [sessionTime, setSessionTime] = useState(5)
+  const [timerOn, setTimerOn] = useState(false)
+  const [onBreak, setOnBreak] = useState(false)
+  const [breakAudio, setBreakAudio] = useState(new Audio("./breakTime.mp3"))
+
+  const playBreakSound = () => {
+    breakAudio.currentTime = 0
+    breakAudio.play()
+  }
 
   const formatTime = (time) => {
     let minutes = Math.floor(time / 60)
@@ -21,16 +28,16 @@ function App() {
   }
 
   const changeTime = (amount, type) => {
-    if (type === 'break') {
+    if (type == 'break') {
       if (breakTime <= 60 && amount < 0) {
-        return
+        return;
       }
-      setBreakTime(prev => prev + amount)
+      setBreakTime((prev) => prev + amount)
     } else {
       if (sessionTime <= 60 && amount < 0) {
-        return
+        return;
       }
-      setSessionTime(prev => prev + amount)
+      setSessionTime((prev) => prev + amount)
       if (!timerOn) {
         setDisplayTime(sessionTime + amount)
       }
@@ -38,7 +45,44 @@ function App() {
   }
 
   const controlTime = () => {
-    
+    let second = 1000
+    let date = new Date().getTime()
+    let nextDate = new Date().getTime() + second
+    let onBreakVariable = onBreak
+    if (!timerOn) {
+      let interval = setInterval(() => {
+        date = new Date().getTime()
+        if (date > nextDate) {
+          setDisplayTime((prev) => {
+            if (prev <= 0 && !onBreakVariable) {
+              playBreakSound()
+              onBreakVariable = true              
+              setOnBreak(true)
+              return breakTime
+            } else if (prev <= 0 && onBreakVariable) {
+              playBreakSound()
+              onBreakVariable = false              
+              setOnBreak(false)
+              return sessionTime
+            }
+            return prev - 1            
+          })
+          nextDate += second          
+        }
+      }, 30)
+      localStorage.clear()
+      localStorage.setItem("interval-id", interval)
+    }
+    if (timerOn) {
+      clearInterval(localStorage.getItem("interval-id"))
+    }
+    setTimerOn(!timerOn)
+  }
+
+  const resetTime = () => {
+    setDisplayTime(25 * 60)
+    setBreakTime(5 * 60)
+    setSessionTime(25 * 60)
   }
   
   return (
@@ -47,6 +91,7 @@ function App() {
         <h1>Pomodoro Clock</h1>
         <div className='dual-container'>
           <Length
+            id="break-label"
             title={"break length"}
             changeTime={changeTime}
             type={"break"}
@@ -54,6 +99,7 @@ function App() {
             formatTime={formatTime}
           />   
           <Length
+            id="session-label"
             title={"session length"}
             changeTime={changeTime}
             type={"session"}
@@ -61,6 +107,7 @@ function App() {
             formatTime={formatTime}
           />
         </div>
+        <h3>{ onBreak ? "Break" : "Session"}</h3>
         <h2>{formatTime(displayTime)}</h2>
         <button className='btn-large deep-purple lighten-2'
           onClick={controlTime}
@@ -74,7 +121,10 @@ function App() {
               
           }
         </button>
-        <button className='btn-large deep-purple lighten-2'>
+        <button
+          className='btn-large deep-purple lighten-2'
+          onClick={resetTime}
+        >
           <i className='material-icons'>autorenew</i>
         </button>
       </div>
